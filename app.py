@@ -5,11 +5,18 @@ from flask_pymongo import PyMongo
 from werkzeug.security import generate_password_hash, check_password_hash
 from bson import json_util
 from bson.objectid import ObjectId
+from flask_cors import CORS
 
 # Ejecutar aplicación Flask
 app = Flask(__name__)
 app.config['MONGO_URI']='mongodb://test:test@127.0.0.1:27017/test?authSource=admin'
 mongo = PyMongo(app)
+
+# Variable para definir un acceso directo al documento de usuarios
+db = mongo.db.users
+
+# Deshabilitar errores de CORS en navegadores
+CORS(app)
 
 
 # Ruta para crear usuarios
@@ -50,7 +57,7 @@ def create_user():
 # Método para obtener usuarios
 def get_users():
     # obtener datos de mongodb (formato bson originalmente)
-    users = mongo.db.users.find()
+    users = db.find()
     # convertir los datos anteriores, de bson a json
     response = json_util.dumps(users)
     # enviar datos convertidos al cliente
@@ -62,7 +69,7 @@ def get_users():
 
 # Método para obtener usuarios
 def get_user(id):
-    user = mongo.db.users.find_one({'_id': ObjectId(id)})
+    user = db.find_one({'_id': ObjectId(id)})
     response = json_util.dumps(user)
     return Response(response, mimetype='application/json')
 
@@ -72,7 +79,7 @@ def get_user(id):
 
 # Método para eliminar usuarios
 def delete_user(id):
-    mongo.db.users.delete_one({'_id': ObjectId(id)})
+    db.delete_one({'_id': ObjectId(id)})
     response = jsonify({'response': 'User (' + id + ') was deleted successfully'})
     return response
 
@@ -88,7 +95,7 @@ def update_user(id):
     
     if username and password and email:
         hashed_pass = generate_password_hash(password)
-        mongo.db.users.update_one({'_id': ObjectId(id)}, {'$set': {
+        db.update_one({'_id': ObjectId(id)}, {'$set': {
             'username': username,
             'password': hashed_pass,
             'email': email
